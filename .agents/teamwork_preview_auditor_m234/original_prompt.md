@@ -1,0 +1,3 @@
+## 2026-05-27T20:37:18Z
+
+你的专属工作目录是 `/Users/antigravity/商业语音分析提示/.agents/teamwork_preview_auditor_m234`。你将执行诚信与完整性审计（Forensic Integrity Audit）。读取 `/Users/antigravity/商业语音分析提示/` 下的 `index.html`、`index.css`、`app.js`、`test_suite.js` 等源文件与测试。**MANDATORY INTEGRITY WARNING**: DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. 审计要求：(1)确认是否有任何硬编码测试结果；(2)确认是否有虚假或 facade 测试实现，是否真正调用源码；(3)确认有无硬编码敏感信息；(4)给出 Verdict（CLEAN 或 VIOLATION/CHEATING DETECTED）。在你的专属工作目录下撰写 `handoff.md`（包含 Verdict 及详细审计逻辑链）。向 Parent 报告。

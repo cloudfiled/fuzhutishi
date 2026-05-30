@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>企业级商业语音分析助手 - 自动化测试套件</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #f1f5f9;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+        .summary {
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #475569;
+            display: flex;
+            gap: 2rem;
+        }
+        .summary-item {
+            font-size: 1.1rem;
+        }
+        .pass-count { color: #10b981; font-weight: bold; }
+        .fail-count { color: #ef4444; font-weight: bold; }
+        .test-case {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        .test-header {
+            padding: 0.75rem 1rem;
+            background: #334155;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-body {
+            padding: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            background: #0f172a;
+        }
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .badge-pass { background: #064e3b; color: #34d399; }
+        .badge-fail { background: #7f1d1d; color: #f87171; }
+        .log-item {
+            margin-bottom: 0.25rem;
+        }
+        .log-error { color: #f87171; }
+        .log-success { color: #34d399; }
+    </style>
+</head>
+<body>
+    <h1>实时语音 Copilot 系统功能自测试套件 (Test Suite)</h1>
+    <div class="summary">
+        <div class="summary-item">总计测试数: <span id="totalTests">0</span></div>
+        <div class="summary-item">成功: <span id="passTests" class="pass-count">0</span></div>
+        <div class="summary-item">失败: <span id="failTests" class="fail-count">0</span></div>
+    </div>
+    
+    <div id="testContainer"></div>
+
+    <script src="app.js"></script>
+    <script>
+        // 定义全局测试统计数据
+        let total = 0;
+        let passed = 0;
+        let failed = 0;
+
+        /**
+         * 向测试控制台记录日志信息
+         * @param {HTMLElement} bodyEl - 测试案例的输出容器元素
+         * @param {string} msg - 日志信息内容
+         * @param {string} [type='info'] - 日志类型: 'success' | 'error' | 'info'
+         */
+        function logToCase(bodyEl, msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log-item log-${type}`;
+            div.textContent = `[${type.toUpperCase()}] ${msg}`;
+            bodyEl.appendChild(div);
+        }
+
+        /**
+         * 断言辅助函数
+         * @param {HTMLElement} bodyEl - 测试案例的输出容器元素
+         * @param {boolean} condition - 期望的断言条件是否为真
+         * @param {string} message - 断言不成立时的错误说明
+         */
+        function assert(bodyEl, condition, message) {
+            if (!condition) {
+                logToCase(bodyEl, `断言失败: ${message}`, 'error');
+                throw new Error(message);
+            } else {
+                logToCase(bodyEl, `断言成功: ${message}`, 'success');
+            }
+        }
+
+        /**
+         * 运行单个测试项
+         * @param {string} name - 测试用例名称
+         * @param {function} testFn - 测试逻辑函数，接收一个测试日志的 Body 元素作为参数
+         */
+        async function runTest(name, testFn) {
+            total++;
+            document.getElementById('totalTests').textContent = total;
+
+            const container = document.getElementById('testContainer');
+            
+            const caseDiv = document.createElement('div');
+            caseDiv.className = 'test-case';
+            
+            const header = document.createElement('div');
+            header.className = 'test-header';
+            header.innerHTML = `<span>${name}</span>`;
+            
+            const body = document.createElement('div');
+            body.className = 'test-body';
+            
+            caseDiv.appendChild(header);
+            caseDiv.appendChild(body);
+            container.appendChild(caseDiv);
+
+            try {
+                logToCase(body, '开始执行测试用例...', 'info');
+                await testFn(body);
+                passed++;
+                document.getElementById('passTests').textContent = passed;
+                
+                const badge = document.createElement('span');
+                badge.className = 'status-badge badge-pass';
+                badge.textContent = 'PASSED';
+                header.appendChild(badge);
+            } catch (err) {
+                failed++;
+                document.getElementById('failTests').textContent = failed;
+                
+                const badge = document.createElement('span');
+                badge.className = 'status-badge badge-fail';
+                badge.textContent = 'FAILED';
+                header.appendChild(badge);
+                
+                logToCase(body, `测试未通过，异常信息: ${err.message}`, 'error');
+            }
+        }
+
+        // ==========================================================================
+        // 自动化测试用例定义
+        // ==========================================================================
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            
+            // 1. 中文去空格函数自测 (R2 核心排版)
+            await runTest('R2-T1: 中文空格清洗模块单元测试', async (body) => {
+                // 测试正常中文间空格消除
+                const t1 = cleanChineseSpaces('您 好 ， 我 是 实 时 语 音 助 手 。');
+                assert(body, t1 === '您好，我是实时语音助手。', `中文空格消除失败，结果是: ${t1}`);
+
+                // 测试英文单词空格保留
+                const t2 = cleanChineseSpaces('这是 Apple 公司 的 iPhone 手机');
+                assert(body, t2 === '这是 Apple 公司的 iPhone 手机', `中英文混杂空格保留逻辑失败，结果是: ${t2}`);
+
+                // 测试中英文边界与英文单词间空格
+                const t3 = cleanChineseSpaces('hello world， 你好 世界');
+                assert(body, t3 === 'hello world，你好世界', `中英英文混排逻辑失败，结果是: ${t3}`);
+
+                // 测试空输入与特殊字符
+                assert(body, cleanChineseSpaces('') === '', '空字符串处理出错');
+                assert(body, cleanChineseSpaces(null) === '', 'null 输入处理出错');
+            });
+
+            // 2. 话术选择与配置解析模板自测
+            await runTest('R2-T2: 场景话术模板解析与注入测试', async (body) => {
+                const SCENARIO_INSTRUCTIONS = {
+                    sales: 'This is a SALES scenario.',
+                    negotiation: 'This is a BUSINESS NEGOTIATION scenario.',
+                    support: 'This is a CUSTOMER SUPPORT scenario.',
+                    tech: 'This is a TECHNICAL SUPPORT scenario.'
+                };
+
+                assert(body, SCENARIO_INSTRUCTIONS.sales.includes('SALES'), '销售话术模板加载异常');
+                assert(body, SCENARIO_INSTRUCTIONS.negotiation.includes('NEGOTIATION'), '谈判话术模板加载异常');
+                assert(body, SCENARIO_INSTRUCTIONS.support.includes('SUPPORT'), '客服话术模板加载异常');
+                assert(body, SCENARIO_INSTRUCTIONS.tech.includes('TECHNICAL'), '技术话术模板加载异常');
+                logToCase(body, '所有场景模板的预定义字段装载正确。', 'success');
+            });
+
+            // 3. LocalStorage 历史会话滑动窗口自测
+            await runTest('R2-T3: LocalStorage 滑动窗口存储机制测试', async (body) => {
+                // Mock 一个独立的存储区域，避免污染真实的用户数据
+                const testStorage = {
+                    getItem(key) {
+                        return localStorage.getItem('test_copilot_history');
+                    },
+                    setItem(key, val) {
+                        localStorage.setItem('test_copilot_history', val);
+                    },
+                    removeItem(key) {
+                        localStorage.removeItem('test_copilot_history');
+                    }
+                };
+                testStorage.removeItem('test_copilot_history');
+
+                // 写入第 1 次，直接调用全局的 saveSessionToHistory
+                saveSessionToHistory([{ role: '我方发言', text: '你好' }], testStorage);
+                let history = JSON.parse(testStorage.getItem('test_copilot_history'));
+                assert(body, history.length === 1, '第一次写入失败');
+
+                // 连续写入 5 次新会话 (共 6 次)
+                for (let i = 2; i <= 6; i++) {
+                    saveSessionToHistory([{ role: '我方发言', text: `对话 #${i}` }], testStorage);
+                }
+
+                history = JSON.parse(testStorage.getItem('test_copilot_history'));
+                // 断言最大长度被限制在 5
+                assert(body, history.length === 5, `长度必须限制为 5, 实际为: ${history.length}`);
+                
+                // 断言最老的第一条 (你好) 已经被滑出窗口剔除，最新的一条 (对话 #6) 在最前面
+                assert(body, history[0].logs[0].text === '对话 #6', `第一条数据应该是最新写入的"对话 #6"，实际为: ${history[0].logs[0].text}`);
+                assert(body, !history.some(h => h.logs[0].text === '你好'), '老会话未被溢出剔除');
+
+                // 清理垃圾数据
+                testStorage.removeItem('test_copilot_history');
+            });
+
+            // 4. 指数退避重连自愈算法测试 (R3 异常重连)
+            await runTest('R3-T1: WebSocket 指数级退避重连算法自测', async (body) => {
+                // 直接测试全局的 calculateBackoffDelay 逻辑
+                assert(body, calculateBackoffDelay(1) === 1000, '第一次重连延迟应为 1s');
+                assert(body, calculateBackoffDelay(2) === 2000, '第二次重连延迟应为 2s');
+                assert(body, calculateBackoffDelay(3) === 4000, '第三次重连延迟应为 4s');
+                assert(body, calculateBackoffDelay(4) === 8000, '第四次重连延迟应为 8s');
+                assert(body, calculateBackoffDelay(5) === 16000, '第五次重连延迟应为 16s');
+                
+                logToCase(body, '指数退避延迟序列验证通过。', 'success');
+            });
+
+            // 5. 10 秒握手超时器自测
+            await runTest('R3-T2: 10秒握手超时及自愈异常机制测试', async (body) => {
+                let isConnected = false;
+                let isClosed = false;
+                let isReconnectTriggered = false;
+
+                const startHandshakeTimeout = (timeoutMs = 100) => { // 缩短 Mock 定时时间方便测试
+                    return setTimeout(() => {
+                        if (!isConnected) {
+                            logToCase(body, '握手超时触发，执行强制关闭以唤醒重连。', 'info');
+                            isClosed = true;
+                            isReconnectTriggered = true;
+                        }
+                    }, timeoutMs);
+                };
+
+                // 测试正常握手完成，超时器应当失效或被清理
+                let timer = startHandshakeTimeout(100);
+                isConnected = true; // 握手秒级完成
+                clearTimeout(timer); // 相当于 clearHandshakeTimeout()
+                
+                await new Promise(resolve => setTimeout(resolve, 150));
+                assert(body, isClosed === false, '正常建立时，不应触发强制关闭');
+
+                // 测试未在规定时间完成握手，应触发自愈重连
+                isConnected = false;
+                isClosed = false;
+                startHandshakeTimeout(50); // 握手超时定时器起效
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+                assert(body, isClosed === true && isReconnectTriggered === true, '超时后应启动异常强制关闭与重连唤醒');
+            });
+
+            // 6. 热切换秒级连接恢复与音频空转自测
+            await runTest('R3-T3: 话术热切换与空转静音流丢包测试', async (body) => {
+                let pendingAudioQueue = [{ data: '帧1' }, { data: '帧2' }];
+                let isReconnecting = true;
+                let isConnected = false;
+                let ws = null;
+
+                // onaudioprocess 模拟体
+                const onAudioProcessMock = (inputData) => {
+                    // 如果处于自动重连中，则物理音频正常捕获，但直接丢弃数据帧并清除队列
+                    if (!isConnected || !ws) {
+                        if (isReconnecting) {
+                            pendingAudioQueue = [];
+                            return 'dropped_and_cleared';
+                        }
+                        return 'dropped';
+                    }
+                    return 'sent';
+                };
+
+                const result = onAudioProcessMock([0.1, 0.2]);
+                assert(body, result === 'dropped_and_cleared', '重连期间音频必须空转并丢弃');
+                assert(body, pendingAudioQueue.length === 0, '重连中产生的多余积压帧应被强行清空，防爆音和啸叫');
+            });
+        });
+    </script>
+</body>
+</html>

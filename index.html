@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Call Copilot | 实时通话专业回复助手</title>
+    <!-- 引入高档字体 Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css?v=2.8">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边配置栏 (毛玻璃悬浮) -->
+        <aside class="sidebar-panel">
+            <div class="brand">
+                <div class="pulse-logo"></div>
+                <h1>Call Copilot</h1>
+            </div>
+            
+            <div class="setting-group">
+                <h3>1. 权限与凭证</h3>
+                <div class="input-wrapper">
+                    <label for="apiKey">Gemini API Key</label>
+                    <input type="password" id="apiKey" placeholder="输入您的 Gemini API Key" autocomplete="off" />
+                </div>
+                <div class="input-wrapper">
+                    <label for="modelSelect">AI 提词大脑模型</label>
+                    <select id="modelSelect" class="scenario-select">
+                        <option value="gemini-2.5-flash-lite" selected>Gemini 2.5 Flash Lite (极速防限流)</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash (高智能版)</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (经典稳定版)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <h3>2. 音频源采集配置</h3>
+                <div class="headphone-tip">
+                    <span class="icon">🎧</span> 戴耳机通话，听音更精准
+                </div>
+                <div class="audio-source-selectors">
+                    <button id="btnRequestMic" class="source-btn">
+                        <span class="icon">🎙️</span> 开启我的麦克风
+                    </button>
+                    <button id="btnRequestSystem" class="source-btn">
+                        <span class="icon">🖥️</span> 共享对方声音 (系统音频)
+                    </button>
+                    <p class="source-tip">提示：使用“共享屏幕”并勾选“共享系统音频”以捕获对方的声音。</p>
+                </div>
+                <!-- 新增双路音频增益控制 -->
+                <div class="gain-control-group">
+                    <div class="input-wrapper">
+                        <div class="slider-header">
+                            <label for="micGainRange">我的麦克风增益</label>
+                            <span id="micGainVal" class="slider-val">1.0x</span>
+                        </div>
+                        <input type="range" id="micGainRange" min="0" max="3" step="0.1" value="1.0" class="volume-slider">
+                    </div>
+                    <div class="input-wrapper">
+                        <div class="slider-header">
+                            <label for="systemGainRange">对方声音增益</label>
+                            <span id="systemGainVal" class="slider-val">1.0x</span>
+                        </div>
+                        <input type="range" id="systemGainRange" min="0" max="3" step="0.1" value="1.0" class="volume-slider">
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <h3>3. 场景话术模板</h3>
+                <div class="input-wrapper">
+                    <label for="scenarioSelect">当前话术场景</label>
+                    <select id="scenarioSelect" class="scenario-select">
+                        <option value="general" selected>通用智能提词 (自适应)</option>
+                        <option value="sales">销售推广</option>
+                        <option value="negotiation">商务谈判</option>
+                        <option value="support">客户支持</option>
+                        <option value="tech">技术支持</option>
+                    </select>
+                </div>
+                <!-- 新增 Google 实时联网搜索开关 -->
+                <div class="input-wrapper search-toggle-container">
+                    <span class="toggle-label">Google 实时联网搜索</span>
+                    <label class="switch">
+                        <input type="checkbox" id="googleSearchToggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <h3>4. 服务控制</h3>
+                <button id="btnToggleConnection" class="action-btn connect-btn" disabled>
+                    建立 Live 会话
+                </button>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-item">
+                    <span class="label">连接状态:</span>
+                    <span id="connectionStatus" class="value text-red">未连接</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">音频捕获:</span>
+                    <span id="audioCaptureStatus" class="value">未就绪</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">平均延迟:</span>
+                    <span id="latencyValue" class="value">0ms</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主操作与内容区 -->
+        <main class="main-content">
+            <!-- 顶部状态横条 -->
+            <header class="main-header">
+                <div class="copilot-state">
+                    <span class="state-dot" id="stateIndicator"></span>
+                    <span id="stateText">等待开启...</span>
+                </div>
+                <div class="header-actions">
+                    <button id="btnToggleHistory" class="history-toggle-btn">
+                        <span class="icon">📜</span> 历史通话
+                    </button>
+                    <div class="grounding-badge" id="groundingBadge">
+                        <span class="icon">🔍</span> 联网检索就绪
+                    </div>
+                </div>
+            </header>
+
+            <!-- 核心交互区 -->
+            <section class="workspace-grid">
+                <!-- 左半部：音波与实时状态记录 -->
+                <div class="card panel-left">
+                    <div class="panel-header">
+                        <h2>实时通话状态流</h2>
+                        <span class="subtitle">AI 后台监听中</span>
+                    </div>
+                    <div class="visualizer-container">
+                        <canvas id="audioVisualizer"></canvas>
+                        <div class="live-pulse" id="micPulse"></div>
+                    </div>
+                    <!-- 实时语音听写字幕栏 -->
+                    <div class="live-caption-bar" id="liveCaptionBar" style="display: none;">
+                        <span class="caption-icon">🎤</span>
+                        <span class="caption-text" id="liveCaptionText">您正在说：正在捕获声音...</span>
+                    </div>
+                    <div class="log-stream-container">
+                        <div class="log-title">事件流</div>
+                        <div class="log-stream" id="logStream">
+                            <div class="log-item system">系统就绪，请先配置 API Key 并授权音频源。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右半部：金牌提示区 (核心照着念区域) -->
+                <div class="panel-right">
+                    <!-- 金牌回复 -->
+                    <div class="card reply-card">
+                        <div class="panel-header">
+                            <h2>🎯 推荐回复 <span class="read-badge">照着念即可</span></h2>
+                            <button class="btn-copy" id="btnCopyReply" title="复制回复">复制</button>
+                        </div>
+                        <div class="reply-content-wrapper">
+                            <div class="reply-placeholder" id="replyPlaceholder">
+                                期待通话中，听到对方发言或提问后，这里将实时输出最专业的回复...
+                            </div>
+                            <div class="reply-text text-stream" id="replyText"></div>
+                        </div>
+                    </div>
+
+                    <!-- 支撑要点 -->
+                    <div class="card points-card">
+                        <div class="panel-header">
+                            <h2>💡 核心论据与要点参考</h2>
+                        </div>
+                        <div class="points-content-wrapper">
+                            <ul class="points-list" id="pointsList">
+                                <li class="point-placeholder">大模型生成回复时，相应的支撑要点、关键论据和行业词汇会在这里呈现。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 历史记录侧边栏 -->
+        <aside class="history-sidebar" id="historySidebar">
+            <div class="history-header">
+                <h2>📜 通话历史记录</h2>
+                <button class="btn-close-history" id="btnCloseHistory">&times;</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <div class="history-empty">暂无历史通话记录</div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 弹窗通知 -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js?v=2.8"></script>
+</body>
+</html>

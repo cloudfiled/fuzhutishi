@@ -1,0 +1,9 @@
+.DS_Store
+*.log
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+node_modules/
+app.test.tmp.js
