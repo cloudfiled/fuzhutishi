@@ -554,7 +554,7 @@ async function triggerGeminiInference(userText) {
     const apiKey = apiKeyInput ? apiKeyInput.value.trim().replace(/['"\s]/g, '') : '';
     const scenario = document.getElementById('scenarioSelect').value;
     const baseInstruction = SCENARIO_INSTRUCTIONS[scenario] || DEFAULT_SYSTEM_INSTRUCTION;
-    const systemInstruction = baseInstruction + "\n5. 严厉警告：绝对禁止在输出的开头或任何地方包含任何客套话、对客户提问的纠错分析说明、多余解释或前置废话，必须直接进行格式化作答。有且仅有要求的格式（👉 [直接念]：和 💡 [要点参考]：），且必须直接以 👉 [直接念]：开头输出！";
+    const systemInstruction = baseInstruction + "\n5. 严厉警告：绝对禁止在输出的开头或任何地方包含任何客套话、对客户提问的纠错分析说明、多余解释或前置废话，必须直接进行格式化作答。有且仅有要求的格式（👉 [直接念]：和 💡 [要点参考]：），且必须直接以 👉 [直接念]：开头输出！" + "\n6. 提词字数精炼控制：对于长历史、长背景的复杂提问，务必言简意赅、高度概括，确保推荐回复的总长度控制在 250 字以内，绝对禁止长篇大论，必须确保回答完整并以合适的句号收尾，避免句子中途遭遇截断。";
     
     let isSearchEnabled = document.getElementById('googleSearchToggle')?.checked ?? false;
     const selectedModel = (typeof document !== 'undefined' && document.getElementById('modelSelect')) ? document.getElementById('modelSelect').value : 'gemini-2.5-flash-lite';
@@ -591,7 +591,7 @@ async function triggerGeminiInference(userText) {
             },
             generationConfig: {
                 temperature: 0.4,
-                maxOutputTokens: 512
+                maxOutputTokens: 1024 // 调大单次最大输出 tokens 限制（从 512 到 1024），确保大模型有充足的宽度将回答说完
             }
         };
 
