@@ -404,7 +404,7 @@ body {
 /* 核心布局栅格 */
 .workspace-grid {
     display: grid;
-    grid-template-columns: 1fr 1.3fr;
+    grid-template-columns: 1fr 1.6fr; /* 调大右侧面板的宽度占比，从 1.3fr 提至 1.6fr */
     gap: 1.5rem;
     flex-grow: 1;
     height: calc(100% - 65px);
@@ -529,7 +529,7 @@ body {
 }
 
 .reply-card {
-    flex-grow: 1.8;
+    flex-grow: 2.5; /* 增大推荐回复卡片的垂直高度占比，从 1.8 提至 2.5 */
     container-type: size;
     container-name: replyContainer;
 }
@@ -588,16 +588,17 @@ body {
     line-height: 1.6;
 }
 
-/* 照着念回复文本：自适应缩放，宽敞行高 */
+/* 照着念回复文本：自适应大字号，宽敞行高与高清字重 */
 .reply-text {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: clamp(1.1rem, 5cqh, 2.2rem); /* 随容器高度自适应缩放 */
-    font-weight: 500;
-    line-height: 1.6; /* 使用纯倍数，防止混合单位计算错误导致的多行文字重叠 */
+    font-size: clamp(1.45rem, 6.5cqh, 2.6rem); /* 显著提大字号：下限从 1.1rem 提至 1.45rem，容器比例从 5% 提至 6.5% */
+    font-weight: 600; /* 加粗为 600 以获得更好的辨识度 */
+    line-height: 1.7; /* 增加行高，提升视线扫读体验 */
     color: #ffffff;
     word-wrap: break-word;
     padding-bottom: 2rem;
     white-space: pre-wrap;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* 注入微弱的深色文字投影，增强暗色背景对比度 */
 }
 
 /* 文本流式输入动画效果 */
